@@ -13,9 +13,17 @@ class ToDoListViewController: UITableViewController {
     // 选定 Table View Controller 比 普通的好，可以省很多链接与 delegate 声明
     var itemArray = ["Find Mike", "Buy Eggs", "Destroy Dragon"]
     
+    let defaults = UserDefaults.standard
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        //TODO: 显示 UserDefaults 传入的保存在本地的数据 KEY指向的内容
+        if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+            itemArray = items
+        } // safe unwrapping
+        // forKey 是本地存储在 sandbox 里的数据指针（KEY）
     }
     
     //MARK: - Tableview Datasource Methods
@@ -66,9 +74,11 @@ class ToDoListViewController: UITableViewController {
         //TODO: 设置 弹出窗口 alert 内部的按钮动作
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             // what will happen once the user clicks the Add Item button on UIAlert
-            print(textField.text)
+            //print(textField.text as Any)
             // 这里是按下 Add Item 递交后显示的内容
             self.itemArray.append(textField.text!)
+            
+            self.defaults.set(self.itemArray, forKey: "TodoListArray")
             
             //TODO: 刷新页面，否则看不到输入数据
             self.tableView.reloadData()
