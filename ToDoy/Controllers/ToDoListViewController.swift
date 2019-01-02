@@ -11,16 +11,33 @@ import UIKit
 class ToDoListViewController: UITableViewController {
     
     // 选定 Table View Controller 比 普通的好，可以省很多链接与 delegate 声明
-    var itemArray = ["Find Mike", "Buy Eggs", "Destroy Dragon"]
+    //var itemArray = ["Find Mike", "Buy Eggs", "Destroy Dragon"]
+    //TODO: 初始化一个以 Model 文件里的 Item 类模板为原型的 数据组
+    var itemArray = [Item]()
     
     let defaults = UserDefaults.standard
     
+    //TODO: 设置页面初始化变量（非显示内容）
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
+        let newItem = Item()
+        newItem.title = "See doctor"
+        itemArray.append(newItem)
+        
+        let newItem2 = Item()
+        newItem2.title = "Meet giraffe"
+        itemArray.append(newItem2)
+        
+        let newItem3 = Item()
+        newItem3.title = "Care for Nova"
+        itemArray.append(newItem3)
+        
+        
+        
         //TODO: 显示 UserDefaults 传入的保存在本地的数据 KEY指向的内容
-        if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
             itemArray = items
         } // safe unwrapping
         // forKey 是本地存储在 sandbox 里的数据指针（KEY）
@@ -30,13 +47,29 @@ class ToDoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
     }
-
-    //TODO: 给 cell 中填充 itemArray 创建的 dummy 文字
+    
+    //TODO: 给 cell 中填充 itemArray 创建的 dummy 文字（设置显示内容）
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         //TODO: 初始化变量
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        
         //TODO: 传递数据
-        cell.textLabel?.text = itemArray[indexPath.row] // 向 cell 内填充 itemArray 的文字
+        let item = itemArray[indexPath.row]
+        cell.textLabel?.text = item.title
+        
+        cell.textLabel?.text = itemArray[indexPath.row].title // 向 cell 内填充 itemArray 的文字。由于indexPath.row 返回的是一个 OBJECT，所以需要 .title 获得其 Property
+        
+        //TODO: 使用 Ternary operator 简化条件判断代码 ==>
+        // value = condition ? valueIfTrue : valueIfFalse
+        cell.accessoryType = item.done ? .checkmark : .none // 跟下面一样
+        //cell.accessoryType = item.done == true ? .checkmark : .none // 跟下面一样
+//
+//        if item.done == true {
+//            cell.accessoryType = .checkmark
+//        } else {
+//            cell.accessoryType = .none
+//        }
         
         return cell
             
@@ -49,7 +82,17 @@ class ToDoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         //print(indexPath.row)           // 显示 index number
-        print(itemArray[indexPath.row])// 显示 table cell 的 实际内容（提取内容）
+        //print(itemArray[indexPath.row])// 显示 table cell 的 实际内容（提取内容）
+        
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done // 跟下面一样
+//
+//        if itemArray[indexPath.row].done == false {
+//            itemArray[indexPath.row].done = true
+//        } else {
+//            itemArray[indexPath.row].done = false
+//        }
+        
+       
         
         // 给每个 cell 在点击时，加个 checkmark （4种 accessory 之一）（没有就加，有就取消）
         if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
@@ -57,6 +100,9 @@ class ToDoListViewController: UITableViewController {
         } else {
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         }
+        
+        //TODO: 强制页面刷新（须在改变 flag 之后），CALL tebleView METHOD again
+        tableView.reloadData()
         
         tableView.deselectRow(at: indexPath, animated: true)  // 点击后底色不会一直灰，而是消失
         
@@ -76,7 +122,13 @@ class ToDoListViewController: UITableViewController {
             // what will happen once the user clicks the Add Item button on UIAlert
             //print(textField.text as Any)
             // 这里是按下 Add Item 递交后显示的内容
-            self.itemArray.append(textField.text!)
+            
+            //self.itemArray.title.append(textField.text!)
+            //TODO: 创建新的 OBJECT，传入新的 Item.title 数据
+            //注意：append 的是 OJBECT，不能是文字本身，因为 itemArray 是 OBJECT 的一个 ARRAY 了
+            let newItem = Item()
+            newItem.title = textField.text!
+            self.itemArray.append(newItem)
             
             self.defaults.set(self.itemArray, forKey: "TodoListArray")
             
