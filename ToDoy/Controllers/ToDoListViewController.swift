@@ -15,32 +15,43 @@ class ToDoListViewController: UITableViewController {
     //TODO: 初始化一个以 Model 文件里的 Item 类模板为原型的 数据组
     var itemArray = [Item]()
     
-    let defaults = UserDefaults.standard
+    //let defaults = UserDefaults.standard
     
-    //TODO: 设置页面初始化变量（非显示内容）
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
+    //TODO: viewDidLoad() 设置页面初始化变量（非显示内容）
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let newItem = Item()
-        newItem.title = "See doctor"
-        itemArray.append(newItem)
+        //TODO: 打印 FileManager 的 Singleton(default) 设定文件存储位置
         
-        let newItem2 = Item()
-        newItem2.title = "Meet giraffe"
-        itemArray.append(newItem2)
+        print(dataFilePath!)
         
-        let newItem3 = Item()
-        newItem3.title = "Care for Nova"
-        itemArray.append(newItem3)
+        // 在设定好自建 plist 后，就可以删掉下列初始化数据
+//        let newItem = Item()
+//        newItem.title = "See doctor"
+//        itemArray.append(newItem)
+//
+//        let newItem2 = Item()
+//        newItem2.title = "Meet giraffe"
+//        itemArray.append(newItem2)
+//
+//        let newItem3 = Item()
+//        newItem3.title = "Care for Nova"
+//        itemArray.append(newItem3)
         
+        //TODO: 从自建的 plist 中调取存储在本地的数据
+        loadItems()
         
-        
-        //TODO: 显示 UserDefaults 传入的保存在本地的数据 KEY指向的内容
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
-        } // safe unwrapping
+        //TODO: [X] 显示 UserDefaults 传入的保存在本地的数据 KEY指向的内容
+//        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
+//            itemArray = items
+//        } // safe unwrapping
         // forKey 是本地存储在 sandbox 里的数据指针（KEY）
+        
+        //TODO: 把自建的 plist 的数据载入 TableViewController
+        
     }
     
     //MARK: - Tableview Datasource Methods
@@ -91,7 +102,6 @@ class ToDoListViewController: UITableViewController {
 //        } else {
 //            itemArray[indexPath.row].done = false
 //        }
-        
        
         
         // 给每个 cell 在点击时，加个 checkmark （4种 accessory 之一）（没有就加，有就取消）
@@ -101,8 +111,10 @@ class ToDoListViewController: UITableViewController {
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         }
         
+        //TODO: CALL plist 文件存储函数
+        saveItems()
         //TODO: 强制页面刷新（须在改变 flag 之后），CALL tebleView METHOD again
-        tableView.reloadData()
+        //tableView.reloadData()
         
         tableView.deselectRow(at: indexPath, animated: true)  // 点击后底色不会一直灰，而是消失
         
@@ -130,10 +142,9 @@ class ToDoListViewController: UITableViewController {
             newItem.title = textField.text!
             self.itemArray.append(newItem)
             
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+            //self.defaults.set(self.itemArray, forKey: "TodoListArray")
+            self.saveItems()
             
-            //TODO: 刷新页面，否则看不到输入数据
-            self.tableView.reloadData()
         }
         
         //TODO: 在 弹出窗口中设置文字输入框
@@ -150,6 +161,36 @@ class ToDoListViewController: UITableViewController {
         //TODO: 设定动画
         present(alert, animated: true, completion: nil)
     
+    }
+    
+    //MARK: - 本地数据存储函数 Persistent Data Storage Methods（可创建多个 plist）
+    //TODO: Encode 数据进一个 plist
+    func saveItems() {
+        // 用了自建的 plist就不用 defaults 了
+        
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+            
+        } catch {
+            print("Error encoding item array, \(error)")
+        }
+        
+        //TODO: 刷新页面，否则看不到输入数据
+        self.tableView.reloadData()
+    }
+    //TODO: 从一个 plist 中 Decode 数据
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error in decoding item array: \(error)")
+            }
+        }
     }
 }
 
