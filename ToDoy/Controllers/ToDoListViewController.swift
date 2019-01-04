@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
     
@@ -16,8 +17,14 @@ class ToDoListViewController: UITableViewController {
     var itemArray = [Item]()
     
     //let defaults = UserDefaults.standard
-    
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
+    //TODO: SQLite 文件路径与缓冲区 Context 的声明
+    let SQLdataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+
+    
     
     //TODO: viewDidLoad() 设置页面初始化变量（非显示内容）
     override func viewDidLoad() {
@@ -26,7 +33,8 @@ class ToDoListViewController: UITableViewController {
         
         //TODO: 打印 FileManager 的 Singleton(default) 设定文件存储位置
         
-        print(dataFilePath!)
+        print(SQLdataFilePath)
+        
         
         // 在设定好自建 plist 后，就可以删掉下列初始化数据
 //        let newItem = Item()
@@ -41,7 +49,7 @@ class ToDoListViewController: UITableViewController {
 //        newItem3.title = "Care for Nova"
 //        itemArray.append(newItem3)
         
-        //TODO: 从自建的 plist 中调取存储在本地的数据
+        //TODO: 从SQLite 中调取存储在本地的数据
         loadItems()
         
         //TODO: [X] 显示 UserDefaults 传入的保存在本地的数据 KEY指向的内容
@@ -95,6 +103,9 @@ class ToDoListViewController: UITableViewController {
         //print(indexPath.row)           // 显示 index number
         //print(itemArray[indexPath.row])// 显示 table cell 的 实际内容（提取内容）
         
+        //TODO: Update Cell Text 打勾后内容改为
+        itemArray[indexPath.row].setValue("Complete", forKey: "title")
+        
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done // 跟下面一样
 //
 //        if itemArray[indexPath.row].done == false {
@@ -136,10 +147,13 @@ class ToDoListViewController: UITableViewController {
             // 这里是按下 Add Item 递交后显示的内容
             
             //self.itemArray.title.append(textField.text!)
-            //TODO: 创建新的 OBJECT，传入新的 Item.title 数据
-            //注意：append 的是 OJBECT，不能是文字本身，因为 itemArray 是 OBJECT 的一个 ARRAY 了
-            let newItem = Item()
+            
+            //TODO: 初始化 Core Data 数据（自动产生一个与 Entity 同名的 Class）
+            //let context = (UIApplication.shared.delegate).
+            
+            let newItem = Item(context: self.context)  // Item 是继承 NSManagedObject 的一个子类，相当于表格的「行」，用 context 是因为需要以 context 为缓冲区，与 SQLite 传递数据
             newItem.title = textField.text!
+            newItem.done = false // 设定初始值为「未被勾选」
             self.itemArray.append(newItem)
             
             //self.defaults.set(self.itemArray, forKey: "TodoListArray")
@@ -166,30 +180,34 @@ class ToDoListViewController: UITableViewController {
     //MARK: - 本地数据存储函数 Persistent Data Storage Methods（可创建多个 plist）
     //TODO: Encode 数据进一个 plist
     func saveItems() {
-        // 用了自建的 plist就不用 defaults 了
-        
-        let encoder = PropertyListEncoder()
-        
+        // 使用 CoreData 的 Item ENTITY，写入数据
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
-            
+            try context.save()
         } catch {
-            print("Error encoding item array, \(error)")
+            print("Error saving context \(error)")
         }
         
         //TODO: 刷新页面，否则看不到输入数据
         self.tableView.reloadData()
     }
     //TODO: 从一个 plist 中 Decode 数据
+//    func loadItems() {
+//        if let data = try? Data(contentsOf: dataFilePath!) {
+//            let decoder = PropertyListDecoder()
+//            do {
+//                itemArray = try decoder.decode([Item].self, from: data)
+//            } catch {
+//                print("Error in decoding item array: \(error)")
+//            }
+//        }
+//    }
+    
     func loadItems() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error in decoding item array: \(error)")
-            }
+        let request : NSFetchRequest<Item> = Item.fetchRequest()   // <Item> specifies the data type of the output
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error in fetching data from context \(error)")
         }
     }
 }
